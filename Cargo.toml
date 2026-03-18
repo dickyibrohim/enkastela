@@ -90,7 +90,7 @@ sea-orm = { version = "1", features = ["sqlx-postgres", "runtime-tokio-native-tl
 
 # Observability
 prometheus = "0.14"
-opentelemetry = "0.28"
+opentelemetry = "0.31"
 opentelemetry_sdk = "0.28"
 
 # Dev / testing
