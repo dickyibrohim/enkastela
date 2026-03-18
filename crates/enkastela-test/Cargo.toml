@@ -1,0 +1,17 @@
+[package]
+name = "enkastela-test"
+description = "Shared test infrastructure for enkastela"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+enkastela.workspace = true
+testcontainers.workspace = true
+testcontainers-modules.workspace = true
+tokio.workspace = true
+rand.workspace = true
+zeroize.workspace = true

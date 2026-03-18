@@ -1,0 +1,29 @@
+name: Security Audit
+
+on:
+  schedule:
+    - cron: "0 2 * * 0" # Every Sunday at 02:00 UTC
+  push:
+    branches: [main]
+
+jobs:
+  audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+      - name: Run cargo audit
+        # RUSTSEC-2023-0071: rsa crate via sqlx-mysql (transitive, no fix available). We only use postgres.
+        run: cargo audit --ignore RUSTSEC-2023-0071
+
+  deny-advisories:
+    name: Deny Advisories
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check advisories

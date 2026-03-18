@@ -1,0 +1,19 @@
+[package]
+name = "enkastela-sea"
+description = "SeaORM integration for Enkastela — transparent field encryption for PostgreSQL."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["encryption", "sea-orm", "postgresql", "field-encryption"]
+categories = ["cryptography", "database"]
+
+[dependencies]
+enkastela.workspace = true
+sea-orm = { version = "1", features = ["sqlx-postgres", "runtime-tokio-native-tls"] }
+base64.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

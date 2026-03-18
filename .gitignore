@@ -1,0 +1,52 @@
+# Rust build artifacts
+/target
+**/target
+Cargo.lock
+
+# IDE & tooling
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Security-sensitive files — NEVER commit
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.csr
+.env
+.env.*
+!.env.example
+credentials.json
+secrets.json
+*.secret
+master_key*
+
+# Internal planning docs
+DEVELOPMENT_PLAN.md
+
+# Test artifacts
+*.profraw
+lcov.info
+coverage/
+tarpaulin-report.html
+
+# Fuzz corpus (can be large)
+fuzz/corpus/
+fuzz/artifacts/
+
+# Benchmark output
+target/criterion/
+
+# Backup files
+*.bak
+*.orig
+*.tmp

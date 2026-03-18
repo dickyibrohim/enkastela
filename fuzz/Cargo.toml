@@ -1,0 +1,37 @@
+[package]
+name = "enkastela-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+enkastela = { path = "../crates/enkastela" }
+aes-gcm = "0.10"
+base64 = "0.22"
+
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "fuzz_wire_format"
+path = "fuzz_targets/fuzz_wire_format.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_decrypt"
+path = "fuzz_targets/fuzz_decrypt.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_blind_index"
+path = "fuzz_targets/fuzz_blind_index.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_stream_decrypt"
+path = "fuzz_targets/fuzz_stream_decrypt.rs"
+doc = false

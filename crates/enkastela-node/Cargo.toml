@@ -1,0 +1,22 @@
+[package]
+name = "enkastela-node"
+description = "Node.js bindings for Enkastela field encryption library."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+enkastela.workspace = true
+napi = { version = "2", features = ["napi4"] }
+napi-derive = "2"
+tokio.workspace = true
+zeroize.workspace = true
+base64.workspace = true
+
+[build-dependencies]
+napi-build = "2"

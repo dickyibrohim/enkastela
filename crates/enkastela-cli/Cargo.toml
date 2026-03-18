@@ -1,0 +1,19 @@
+[package]
+name = "enkastela-cli"
+description = "CLI tool for enkastela field encryption management"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "enkastela"
+path = "src/main.rs"
+
+[dependencies]
+enkastela.workspace = true
+clap.workspace = true
+tokio.workspace = true
+rand.workspace = true
+base64.workspace = true

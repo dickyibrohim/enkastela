@@ -1,0 +1,19 @@
+[package]
+name = "enkastela-diesel"
+description = "Diesel integration for Enkastela — transparent field encryption for PostgreSQL."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["encryption", "diesel", "postgresql", "field-encryption"]
+categories = ["cryptography", "database"]
+
+[dependencies]
+enkastela.workspace = true
+diesel = { version = "2", features = ["postgres"] }
+base64.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

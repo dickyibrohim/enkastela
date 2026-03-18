@@ -1,0 +1,19 @@
+[package]
+name = "enkastela-python"
+description = "Python bindings for Enkastela field encryption library."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+name = "enkastela"
+crate-type = ["cdylib"]
+
+[dependencies]
+enkastela.workspace = true
+pyo3 = { version = "0.23", features = ["extension-module"] }
+tokio.workspace = true
+zeroize.workspace = true
+base64.workspace = true

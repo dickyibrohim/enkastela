@@ -1,0 +1,128 @@
+[package]
+name = "enkastela"
+description = "Application-level field encryption for PostgreSQL. Written in Rust. Built for production."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["encryption", "postgresql", "security", "gdpr", "field-encryption"]
+categories = ["cryptography", "database"]
+
+[dependencies]
+# Crypto
+aes-gcm.workspace = true
+aes-siv.workspace = true
+aes-kw.workspace = true
+hmac.workspace = true
+sha2.workspace = true
+hkdf.workspace = true
+rand.workspace = true
+subtle.workspace = true
+zeroize.workspace = true
+base64.workspace = true
+
+# Database
+sqlx.workspace = true
+
+# Async
+tokio.workspace = true
+async-trait.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+
+# Error handling & logging
+thiserror.workspace = true
+tracing.workspace = true
+
+# Concurrent data structures
+dashmap.workspace = true
+
+# Unicode
+unicode-normalization.workspace = true
+
+# Internal
+enkastela-derive.workspace = true
+
+# FIPS backend (optional)
+aws-lc-rs = { workspace = true, optional = true }
+
+# SQL parsing (optional)
+sqlparser = { workspace = true, optional = true }
+
+# Observability (optional)
+prometheus = { workspace = true, optional = true }
+opentelemetry = { workspace = true, optional = true }
+opentelemetry_sdk = { workspace = true, optional = true }
+
+# KMS providers (optional)
+aws-sdk-kms = { workspace = true, optional = true }
+aws-config = { workspace = true, optional = true }
+gcp_auth = { workspace = true, optional = true }
+reqwest = { workspace = true, optional = true }
+url = { workspace = true, optional = true }
+azure_security_keyvault_keys = { workspace = true, optional = true }
+azure_identity = { workspace = true, optional = true }
+azure_core = { workspace = true, optional = true }
+
+[dev-dependencies]
+testcontainers.workspace = true
+testcontainers-modules.workspace = true
+proptest.workspace = true
+criterion.workspace = true
+tokio-test.workspace = true
+trybuild.workspace = true
+tracing-test.workspace = true
+
+[features]
+default = ["audit"]
+audit = []
+kms-aws = ["dep:aws-sdk-kms", "dep:aws-config"]
+kms-gcp = ["dep:gcp_auth", "dep:reqwest"]
+kms-azure = ["dep:azure_security_keyvault_keys", "dep:azure_identity", "dep:azure_core", "dep:url"]
+kms-hashicorp = ["dep:reqwest"]
+streaming = []
+fips = ["dep:aws-lc-rs"]
+firewall = ["dep:sqlparser"]
+metrics-prometheus = ["dep:prometheus"]
+otel = ["dep:opentelemetry", "dep:opentelemetry_sdk"]
+
+[[example]]
+name = "basic_encrypt"
+path = "../../examples/basic_encrypt.rs"
+
+[[example]]
+name = "searchable_encryption"
+path = "../../examples/searchable_encryption.rs"
+
+[[example]]
+name = "key_derivation"
+path = "../../examples/key_derivation.rs"
+
+[[bench]]
+name = "crypto_primitives"
+path = "../../benches/crypto_primitives.rs"
+harness = false
+
+[[bench]]
+name = "field_encryption"
+path = "../../benches/field_encryption.rs"
+harness = false
+
+[[bench]]
+name = "key_cache"
+path = "../../benches/key_cache.rs"
+harness = false
+
+[[bench]]
+name = "blind_index"
+path = "../../benches/blind_index.rs"
+harness = false
+
+[[bench]]
+name = "concurrent"
+path = "../../benches/concurrent.rs"
+harness = false
