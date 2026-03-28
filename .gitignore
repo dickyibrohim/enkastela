@@ -6,6 +6,7 @@ Cargo.lock
 # IDE & tooling
 .idea/
 .vscode/
+.claude/
 *.swp
 *.swo
 *~
