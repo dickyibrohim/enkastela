@@ -1,7 +1,9 @@
 [advisories]
 version = 2
-# RUSTSEC-2023-0071: rsa crate via sqlx-mysql (transitive, no fix available). We only use postgres.
-ignore = ["RUSTSEC-2023-0071"]
+# RUSTSEC-2026-0049: rustls-webpki CRL matching bug. Pulled in transitively by aws-smithy-http-client
+# via hyper-rustls 0.24 / rustls 0.21. The newer rustls path (0.103.10) is already patched.
+# Impact is low: the affected code is in the AWS SDK TLS stack, not in our cert validation logic.
+ignore = ["RUSTSEC-2026-0049"]
 
 [licenses]
 version = 2
