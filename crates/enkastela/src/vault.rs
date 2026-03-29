@@ -155,7 +155,12 @@ impl Vault {
         padded.extend_from_slice(&raw_ciphertext);
 
         let payload = WirePayload::new(version, padded);
-        Ok(payload.encode())
+        let encoded = payload.encode();
+
+        self.log_audit(AuditAction::Encrypt, table, column, version)
+            .await;
+
+        Ok(encoded)
     }
 
     /// Decrypts a deterministic (AES-256-SIV) wire-format ciphertext.
@@ -190,7 +195,12 @@ impl Vault {
         }
         let siv_ciphertext = &payload.raw_ciphertext[12..];
 
-        siv::decrypt_deterministic(&siv_key, siv_ciphertext, &aad)
+        let result = siv::decrypt_deterministic(&siv_key, siv_ciphertext, &aad)?;
+
+        self.log_audit(AuditAction::Decrypt, table, column, payload.dek_version)
+            .await;
+
+        Ok(result)
     }
 
     /// Decrypts a wire-format encoded ciphertext.
@@ -350,16 +360,34 @@ impl Vault {
     /// * `table` — table name (must match what was used for encryption)
     /// * `column` — column name (must match what was used for encryption)
     /// * `ciphertext` — the stream-encrypted bytes from [`Vault::encrypt_stream`]
+    ///
+    /// Uses the current DEK version. If the data was encrypted with a different
+    /// version (e.g., before key rotation), use [`Vault::decrypt_stream_with_version`].
     pub async fn decrypt_stream(
         &self,
         table: &str,
         column: &str,
         ciphertext: &[u8],
     ) -> Result<Zeroizing<Vec<u8>>, Error> {
+        let version = self.current_version.load(Ordering::Relaxed);
+        self.decrypt_stream_with_version(table, column, ciphertext, version)
+            .await
+    }
+
+    /// Decrypts a stream-encrypted payload using a specific DEK version.
+    ///
+    /// Use this when the data was encrypted with a DEK version that differs
+    /// from the current version (e.g., before a key rotation).
+    pub async fn decrypt_stream_with_version(
+        &self,
+        table: &str,
+        column: &str,
+        ciphertext: &[u8],
+        version: u32,
+    ) -> Result<Zeroizing<Vec<u8>>, Error> {
         let aad = build_aad(table, column);
         validate_aad(&aad)?;
 
-        let version = self.current_version.load(Ordering::Relaxed);
         let dek_result =
             self.keyring
                 .get_or_derive_dek_with_salt(table, version, &self.dek_salt)?;
@@ -779,9 +807,6 @@ impl VaultBuilder {
 
         let master_key = provider.get_master_key().await?;
 
-        // Derive an audit integrity key from the master key
-        let audit_key_bytes = *master_key.as_bytes();
-
         // --- Database setup (optional) ---
         let (pool, repository) = if let Some(ref url) = self.config.database_url {
             let pg_pool = crate::storage::pool::connect(url, self.config.require_tls).await?;
@@ -796,12 +821,6 @@ impl VaultBuilder {
             (None, None)
         };
 
-        let keyring = KeyringManager::new(
-            master_key,
-            self.config.cache_ttl,
-            self.config.cache_max_entries,
-        );
-
         // Load DEK salt from DB or generate a new one.
         // When a database is configured, the salt is stored in the `enkastela.keys`
         // table with id = `_dek_salt` so all instances share the same derivation
@@ -813,6 +832,35 @@ impl VaultBuilder {
         } else {
             crate::crypto::kdf::generate_salt()
         };
+
+        // Derive sub-keys from master key BEFORE it is moved into KeyringManager.
+        // This enforces key separation: audit, tenant, and encryption all use
+        // independent derived keys rather than the raw master key.
+        let audit_key = if self.config.audit_enabled {
+            let info = b"enkastela:audit:integrity";
+            Some(crate::crypto::kdf::derive_key(
+                &master_key,
+                &dek_salt,
+                info,
+            )?)
+        } else {
+            None
+        };
+
+        let tenant_mgr = if self.enable_tenant {
+            let tenant_info = b"enkastela:tenant:master";
+            let tenant_master =
+                crate::crypto::kdf::derive_key(&master_key, &dek_salt, tenant_info)?;
+            Some(TenantKeyManager::new(tenant_master))
+        } else {
+            None
+        };
+
+        let keyring = KeyringManager::new(
+            master_key,
+            self.config.cache_ttl,
+            self.config.cache_max_entries,
+        );
 
         let metrics: Arc<dyn MetricsRecorder> =
             self.metrics.unwrap_or_else(|| Arc::new(NoOpMetrics));
@@ -826,8 +874,9 @@ impl VaultBuilder {
             } else {
                 Arc::new(InMemoryAuditSink::new())
             };
-            let audit_key = SecretKey::from_bytes(audit_key_bytes);
-            let hasher = Arc::new(HmacEventHasher::new(audit_key));
+            let hasher = Arc::new(HmacEventHasher::new(
+                audit_key.expect("audit_key derived when audit_enabled"),
+            ));
             Some(AuditLogger::new(
                 sink,
                 hasher,
@@ -841,13 +890,6 @@ impl VaultBuilder {
         };
 
         let rotation = RotationEngine::new(self.rotation_strategy);
-
-        let tenant_mgr = if self.enable_tenant {
-            let tenant_master = SecretKey::from_bytes(audit_key_bytes);
-            Some(TenantKeyManager::new(tenant_master))
-        } else {
-            None
-        };
 
         Ok(Vault {
             keyring,

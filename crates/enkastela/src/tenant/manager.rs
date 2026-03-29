@@ -101,29 +101,22 @@ impl TenantKeyManager {
 
     /// Gets the cached tenant key or returns error.
     pub fn get_tenant_key(&self, tenant_id: &str) -> Result<SecretKey, Error> {
-        let cache = self.cache.lock().expect("lock poisoned");
-        let material = cache.get(tenant_id).ok_or_else(|| Error::KeyNotFound {
-            purpose: "tenant".to_string(),
-            scope: tenant_id.to_string(),
-        })?;
+        let wrapped_copy = {
+            let cache = self.cache.lock().expect("lock poisoned");
+            let material = cache.get(tenant_id).ok_or_else(|| Error::KeyNotFound {
+                purpose: "tenant".to_string(),
+                scope: tenant_id.to_string(),
+            })?;
 
-        if material.destroyed {
-            return Err(Error::KeyDestroyed);
-        }
+            if material.destroyed {
+                return Err(Error::KeyDestroyed);
+            }
 
-        // Unwrap from the cached wrapped key
-        drop(cache); // release lock before calling unwrap_key
-        let cache = self.cache.lock().expect("lock poisoned");
-        let material = cache.get(tenant_id).ok_or_else(|| Error::KeyNotFound {
-            purpose: "tenant".to_string(),
-            scope: tenant_id.to_string(),
-        })?;
+            // Clone the wrapped key while the lock is held, then release.
+            material.wrapped_key.clone()
+        };
 
-        if material.destroyed {
-            return Err(Error::KeyDestroyed);
-        }
-
-        wrap::unwrap_key(&self.master_key, &material.wrapped_key)
+        wrap::unwrap_key(&self.master_key, &wrapped_copy)
     }
 
     /// Destroys a tenant key (crypto-shredding).

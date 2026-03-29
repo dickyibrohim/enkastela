@@ -30,8 +30,9 @@ secrets.json
 *.secret
 master_key*
 
-# Internal planning docs
+# Internal docs — not for public repo
 DEVELOPMENT_PLAN.md
+checking.md
 
 # Test artifacts
 *.profraw

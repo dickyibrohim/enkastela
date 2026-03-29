@@ -65,6 +65,12 @@ pub fn encrypt_stream(
         plaintext.len().div_ceil(chunk_size)
     };
 
+    if total_chunks > u32::MAX as usize {
+        return Err(Error::PayloadTooLarge {
+            max_bytes: u32::MAX as usize * chunk_size,
+        });
+    }
+
     let mut output = Vec::new();
 
     // Write header: chunk count (4 bytes BE) + base nonce (8 bytes)

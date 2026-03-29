@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-03-29
+
+### Fixed
+
+#### Security
+- **Key separation violation**: audit HMAC key and tenant master key were
+  using raw master key bytes instead of HKDF-derived sub-keys. Now both are
+  independently derived via `HKDF(master_key, salt, domain_info)` before the
+  master key is consumed by the keyring manager. The existing
+  `KeyringManager::derive_audit_key()` method (which was never wired in) is
+  now used correctly.
+- **Missing audit trail for deterministic operations**: `encrypt_field_deterministic`
+  and `decrypt_field_deterministic` did not emit audit events, creating a blind
+  spot for compliance (SOC2/HIPAA). Both methods now log `AuditAction::Encrypt`
+  and `AuditAction::Decrypt` respectively.
+
+#### Bug Fixes
+- **`InMemoryKeyRepository::store_tenant_key`** returned `TenantAlreadyErased`
+  when an active tenant key already existed — the opposite of the actual state.
+  Now returns `Ok(())` silently, matching the PostgreSQL backend's
+  `ON CONFLICT DO NOTHING` semantics.
+
+### Changed
+- `TenantKeyManager::get_tenant_key` no longer uses a redundant drop-relock
+  pattern. The wrapped key bytes are cloned while the lock is held, then the
+  lock is released before calling `unwrap_key`. Single lock acquisition, no
+  TOCTOU window.
+- `Vault::decrypt_stream` now delegates to the new `decrypt_stream_with_version`
+  method internally (no behavior change for callers).
+
+### Added
+- `Vault::decrypt_stream_with_version(table, column, ciphertext, version)` —
+  allows decrypting stream-encrypted data with an explicit DEK version.
+- Defensive guard in `encrypt_stream` that returns `PayloadTooLarge` if the
+  chunk count would overflow `u32` (unreachable with default config, but
+  prevents silent truncation for extreme edge cases).
+- 20 new integration tests (`bugfix_verification.rs`) covering all fixes with
+  end-to-end production simulation scenarios.
+
 ## [0.1.0] - 2026-03-18
 
 ### Added

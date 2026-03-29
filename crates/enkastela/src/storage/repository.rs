@@ -283,7 +283,9 @@ impl KeyRepository for InMemoryKeyRepository {
             .map_err(|e| Error::Database(e.to_string().into()))?;
         if let Some(existing) = tenant_keys.get(&entry.tenant_id) {
             if existing.status != KeyStatus::Destroyed {
-                return Err(Error::TenantAlreadyErased(entry.tenant_id.clone()));
+                // Key already exists and is active — silently ignore (matches
+                // PostgreSQL's ON CONFLICT DO NOTHING behaviour).
+                return Ok(());
             }
         }
         tenant_keys.insert(entry.tenant_id.clone(), entry);
