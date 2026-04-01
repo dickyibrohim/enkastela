@@ -30,7 +30,7 @@ aes-siv = "0.7"
 aes-kw = "0.2"
 hmac = "0.12"
 sha2 = "0.10"
-hkdf = "0.12"
+hkdf = "0.13"
 rand = "0.10"
 subtle = "2"
 zeroize = { version = "1", features = ["derive"] }
