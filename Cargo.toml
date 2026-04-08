@@ -72,7 +72,7 @@ reqwest = { version = "0.12", features = ["json"] }
 url = "2"
 azure_security_keyvault_keys = "0.12"
 azure_identity = "0.33"
-azure_core = "0.33"
+azure_core = "0.34"
 
 # CLI
 clap = { version = "4", features = ["derive", "env"] }
